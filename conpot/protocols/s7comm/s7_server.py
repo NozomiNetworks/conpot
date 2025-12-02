@@ -102,13 +102,31 @@ class S7Server(object):
                 data += sock.recv(length - 4, socket.MSG_WAITALL)
 
                 tpkt_packet = TPKT().parse(cleanse_byte_string(data))
+
+                if not tpkt_packet:
+                    logger.info("S7 error: Malformed packet")
+                    session.add_event({"error": "S7 error: Malformed packet"})
+                    break
+
                 cotp_base_packet = COTP_BASE_packet().parse(tpkt_packet.payload)
+
+                if not cotp_base_packet:
+                    logger.info("S7 error: Malformed packet")
+                    session.add_event({"error": "S7 error: Malformed packet"})
+                    break
+
                 if cotp_base_packet.tpdu_type == 0xE0:
 
                     # connection request
                     cotp_cr_request = COTP_ConnectionRequest().dissect(
                         cotp_base_packet.payload
                     )
+
+                    if not cotp_cr_request:
+                        logger.info("S7 error: Malformed packet")
+                        session.add_event({"error": "S7 error: Malformed packet"})
+                        break
+
                     logger.info(
                         "Received COTP Connection Request: dst-ref:{0} src-ref:{1} dst-tsap:{2} src-tsap:{3} "
                         "tpdu-size:{4}. ({5})".format(
@@ -149,7 +167,18 @@ class S7Server(object):
 
                     # another round of parsing payloads
                     tpkt_packet = TPKT().parse(data)
+
+                    if not tpkt_packet:
+                        logger.info("S7 error: Malformed packet")
+                        session.add_event({"error": "S7 error: Malformed packet"})
+                        break
+
                     cotp_base_packet = COTP_BASE_packet().parse(tpkt_packet.payload)
+
+                    if not cotp_base_packet:
+                        logger.info("S7 error: Malformed packet")
+                        session.add_event({"error": "S7 error: Malformed packet"})
+                        break
 
                     if cotp_base_packet.tpdu_type == 0xF0:
                         logger.info(
@@ -207,6 +236,12 @@ class S7Server(object):
 
                                 while data:
                                     tpkt_packet = TPKT().parse(data)
+                                    
+                                    if not tpkt_packet:
+                                        logger.info("S7 error: Malformed packet")
+                                        session.add_event({"error": "S7 error: Malformed packet"})
+                                        break
+
                                     cotp_base_packet = COTP_BASE_packet().parse(
                                         tpkt_packet.payload
                                     )
@@ -267,26 +302,14 @@ class S7Server(object):
                                 cotp_base_packet.tpdu_type
                             )
                         )
-                        session.add_event(
-                            {
-                                "error": "Received unknown COTP TPDU after handshake: {0}".format(
-                                    cotp_base_packet.tpdu_type
-                                )
-                            }
-                        )
+                        session.add_event({"error": "S7 error: Received unknown COTP TPDU after handshake: {0}".format(cotp_base_packet.tpdu_type)})
                 else:
                     logger.info(
                         "Received unknown COTP TPDU before handshake: {0}".format(
                             cotp_base_packet.tpdu_type
                         )
                     )
-                    session.add_event(
-                        {
-                            "error": "Received unknown COTP TPDU before handshake: {0}".format(
-                                cotp_base_packet.tpdu_type
-                            )
-                        }
-                    )
+                    session.add_event({"error": "S7 error: Received unknown COTP TPDU before handshake: {0}".format(cotp_base_packet.tpdu_type)})
 
         except socket.timeout:
             session.add_event({"type": "CONNECTION_LOST"})

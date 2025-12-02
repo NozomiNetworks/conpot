@@ -29,7 +29,7 @@ class TPKT:
             # try to extract the header by pattern to find malformed header data
             header = unpack("!BBH", packet[:4])
         except struct.error:
-            raise ParseException("s7comm", "malformed packet header structure")
+            return None
 
         # extract header data and payload
         self.version = header[0]

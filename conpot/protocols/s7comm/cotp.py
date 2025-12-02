@@ -47,7 +47,7 @@ class COTP(object):
         try:
             header = unpack("!BBB", packet[:3])
         except struct.error:
-            raise ParseException("s7comm", "malformed packet header structure")
+            return None
 
         self.packet_length = header[0]
         self.tpdu_type = int(header[1])
@@ -93,7 +93,7 @@ class COTPConnectionPacket:
         try:
             fixed_header = unpack("!HHB", packet[:5])
         except struct.error:
-            raise ParseException("s7comm", "malformed fixed header structure")
+            return None
 
         self.dst_ref = fixed_header[0]
         self.src_ref = fixed_header[1]
@@ -111,8 +111,7 @@ class COTPConnectionPacket:
             elif chunk_param_length == 2:
                 param_unpack_structure = "!H"
             else:
-                raise ParseException("s7comm", "malformed variable header structure")
-
+                return None
             chunk_param_data = unpack(
                 param_unpack_structure, chunk[2 : 2 + chunk_param_length]
             )
@@ -124,7 +123,7 @@ class COTPConnectionPacket:
             elif chunk_param_code == 0xC0:
                 self.tpdu_size = chunk_param_data[0]
             else:
-                raise ParseException("s7comm", "unknown parameter code")
+                return None
 
             # remove this part of the chunk
             chunk = chunk[2 + chunk_param_length :]
