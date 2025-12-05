@@ -1,0 +1,11 @@
+<HTML>
+
+    <HEAD>
+        <TITLE>HTTP Version Not Supported</TITLE>
+    </HEAD>
+
+    <BODY>
+        505 - HTTP Version Not Supported.<br>
+    </BODY>
+
+</HTML>
